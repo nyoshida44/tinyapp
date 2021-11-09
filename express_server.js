@@ -34,6 +34,16 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
+// Sends urlDatabse to client in JSON format
+app.get("/urls.json", (req, res) => {
+  res.json(urlDatabase);
+});
+
+// Example of sending HTML to the client without ejs
+app.get("/hello", (req, res) => {
+  res.send("<html><body>Hello <b>World</b></body></html>\n");
+});
+
 // Allows data from our database to be used in ejs page, urls_index.ejs
 app.get("/urls", (req, res) => {
   const templateVars = {urls: urlDatabase};
@@ -46,6 +56,13 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);
 });
+
+// Deletes a shortURL and associate longURL and redirects to /urls
+app.post('/urls/:shortURL/delete', (req, res) =>{
+  const shortURL = req.params.shortURL;
+  delete urlDatabase[shortURL];
+  res.redirect('/urls')
+})
 
 // Sends ejs page urls_new to the client browser.
 app.get("/urls/new", (req, res) => {
@@ -62,16 +79,6 @@ app.get("/u/:shortURL", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
-});
-
-// Sends urlDatabse to client in JSON format
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-// Example of sending HTML to the client without ejs
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 // Creates a listener on a specific port, in this case 8080
