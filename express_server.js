@@ -34,13 +34,13 @@ app.get("/urls", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req);
-  res.send("Ok");         
+  const shortURL = generateRandomString(); 
+  urlDatabase[shortURL] = req.body.longURL;
+  res.redirect(`/urls/${shortURL}`);        
 });
 
 app.get("/urls/new", (req, res) => {
-  const shortURL = generateRandomString()
-  res.render("urls_new", {shortURL: shortURL});
+  res.render("urls_new");
 });
 
 app.get("/urls/:shortURL", (req, res) => {
