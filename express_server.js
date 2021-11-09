@@ -57,13 +57,6 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
-// Deletes a shortURL and associate longURL and redirects to /urls
-app.post('/urls/:shortURL/delete', (req, res) =>{
-  const shortURL = req.params.shortURL;
-  delete urlDatabase[shortURL];
-  res.redirect('/urls')
-})
-
 // Sends ejs page urls_new to the client browser.
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
@@ -79,6 +72,18 @@ app.get("/u/:shortURL", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
+});
+
+app.post('/urls/:shortURL', (req, res) =>{
+  urlDatabase[req.params.shortURL] = req.body.longURL;
+  res.redirect('/urls');
+});
+
+// Deletes a shortURL and associate longURL and redirects to /urls
+app.post('/urls/:shortURL/delete', (req, res) =>{
+  const shortURL = req.params.shortURL;
+  delete urlDatabase[shortURL];
+  res.redirect('/urls');
 });
 
 // Creates a listener on a specific port, in this case 8080
