@@ -74,6 +74,7 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+// Modifies urlDatabase with new longURL stored in body
 app.post('/urls/:shortURL', (req, res) =>{
   urlDatabase[req.params.shortURL] = req.body.longURL;
   res.redirect('/urls');
