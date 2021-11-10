@@ -16,6 +16,10 @@ const urlDatabase = {
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
+// used to read cookies created by the browser client
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
+
 // function to generate 6 digit random alphanumerical ShortURL
 const generateRandomString = () => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -46,7 +50,7 @@ app.get("/hello", (req, res) => {
 
 // Allows data from our database to be used in ejs page, urls_index.ejs
 app.get("/urls", (req, res) => {
-  const templateVars = {urls: urlDatabase};
+  const templateVars = {username: req.cookies["username"], urls: urlDatabase};
   res.render("urls_index", templateVars);
 });
 
@@ -57,9 +61,22 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
+// Login creates a cookie that remembers username
+app.post("/login", (req, res) => {
+  res.cookie("username", req.body.username);
+  res.redirect('/urls');
+});
+
+// Logout deletes cookie and forgets the username
+app.post("/logout", (req, res) =>{
+  res.clearCookie("username");
+  res.redirect('/urls');
+});
+
 // Sends ejs page urls_new to the client browser.
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = {username: req.cookies["username"]};
+  res.render("urls_new", templateVars);
 });
 
 // Sends client to longURL of it's associated shortURL using params.
@@ -70,7 +87,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 // Sends ejs page urls_show to client browser which shows the shortURL and associated longURL
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  const templateVars = { username: req.cookies["username"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
 });
 
