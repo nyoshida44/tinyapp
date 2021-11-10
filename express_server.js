@@ -12,6 +12,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
+
 // used to read post request in a parameter called body
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -33,6 +46,21 @@ const generateRandomString = () => {
   return randomString;
 };
 
+// errorcatcher is used to check if registration is valid (helper later)
+const errorCatcher = (userList, email, password) => {
+  for (const user in userList) {
+    console.log(email);
+    console.log(userList[user]["email"]);
+    console.log(email === userList[user]["email"]);
+    if (email === userList[user]["email"]) {
+      return {error: "Email Taken", data: null}
+    } if (password === "" || email === "") {
+      return {error: "Email or Password empty", data: null}
+    }
+  }
+  return {error: null, data: "All Good"}
+};
+
 // First get just says hello in browser
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -48,14 +76,30 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+// Sent ejs file urls_register to the client, a registration page
 app.get("/register", (req, res) => {
-  const templateVars = {username: req.cookies["username"]};
+  const templateVars = {user_id: req.cookies["user_id"]};
   res.render("urls_register", templateVars);
+});
+
+// Registers email and password to users. Error if email in use or emal/pssword blank
+app.post("/register", (req, res) =>{
+  const {email, password} = req.body;
+  const {error, data} = errorCatcher(users, email, password);
+  if (error) {
+    console.log(error);
+    res.sendStatus(400);
+    return;
+  }
+  const id = generateRandomString();
+  users[id] = {id: id, email: email, password: password};
+  res.cookie("user_id", users[id])
+  res.redirect('/urls');
 });
 
 // Allows data from our database to be used in ejs page, urls_index.ejs
 app.get("/urls", (req, res) => {
-  const templateVars = {username: req.cookies["username"], urls: urlDatabase};
+  const templateVars = {user_id: req.cookies["user_id"], urls: urlDatabase};
   res.render("urls_index", templateVars);
 });
 
@@ -75,12 +119,13 @@ app.post("/login", (req, res) => {
 // Logout deletes cookie and forgets the username
 app.post("/logout", (req, res) =>{
   res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect('/urls');
 });
 
 // Sends ejs page urls_new to the client browser.
 app.get("/urls/new", (req, res) => {
-  const templateVars = {username: req.cookies["username"]};
+  const templateVars = {user_id: req.cookies["user_id"]};
   res.render("urls_new", templateVars);
 });
 
@@ -92,7 +137,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 // Sends ejs page urls_show to client browser which shows the shortURL and associated longURL
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { username: req.cookies["username"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  const templateVars = { user_id: req.cookies["user_id"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
 });
 
