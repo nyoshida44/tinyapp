@@ -49,9 +49,6 @@ const generateRandomString = () => {
 // errorcatcher is used to check if registration is valid (helper later)
 const errorCatcher = (userList, email, password) => {
   for (const user in userList) {
-    console.log(email);
-    console.log(userList[user]["email"]);
-    console.log(email === userList[user]["email"]);
     if (email === userList[user]["email"]) {
       return {error: "Email Taken", data: null}
     } if (password === "" || email === "") {
@@ -110,10 +107,10 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
-// Login creates a cookie that remembers username
-app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
-  res.redirect('/urls');
+// New Login right now is a simple login page at the moment (logic next)
+app.get("/login", (req, res) => {
+  const templateVars = {user_id: req.cookies["user_id"]};
+  res.render("urls_login", templateVars);
 });
 
 // Logout deletes cookie and forgets the username
