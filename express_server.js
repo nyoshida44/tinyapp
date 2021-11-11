@@ -201,8 +201,21 @@ app.get("/u/:shortURL", (req, res) => {
 
 // Sends ejs page urls_show to client browser which shows the shortURL and associated longURL
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { user_id: req.cookies["user_id"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]["longURL"] };
-  res.render("urls_show", templateVars);
+  const ownedURL = urlsForUser(req.cookies["user_id"]["id"], urlDatabase); 
+  if (req.cookies["user_id"]) {
+    if (ownedURL) {
+      for (const url in ownedURL) {
+        if (url === req.params.shortURL) {
+          const templateVars = { user_id: req.cookies["user_id"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]["longURL"] };
+          res.render("urls_show", templateVars);
+          return;
+        }
+      }
+    }
+    res.send("This URL does not belong to you.")
+    return;
+  }
+  res.send("User not logged in.");
 });
 
 // Modifies urlDatabase with new longURL stored in body
