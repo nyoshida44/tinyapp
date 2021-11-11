@@ -11,11 +11,11 @@ app.set("view engine", "ejs");
 const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
-    userID: "aJ48lW"
+    userID: "userRandomID"
   },
   i3BoGr: {
     longURL: "https://www.google.ca",
-    userID: "aJ48lW"
+    userID: "user2RandomID"
   }
 };
 
@@ -83,6 +83,16 @@ const loginCatcher = (userList, email, password) => {
   return {error: "Email not registered in datatabase", data: null};
 };
 
+const urlsForUser = (loginID, database) => {
+  const returnObject = {};
+  for (const data in database) {
+    if (database[data]["userID"] == loginID) {
+      returnObject[data] = database[data]["longURL"];
+    }
+  }
+  return returnObject;
+};
+
 // First get just says hello in browser
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -121,8 +131,14 @@ app.post("/register", (req, res) =>{
 
 // Allows data from our database to be used in ejs page, urls_index.ejs
 app.get("/urls", (req, res) => {
-  const templateVars = {user_id: req.cookies["user_id"], urls: urlDatabase};
-  res.render("urls_index", templateVars);
+  if (req.cookies["user_id"]) {
+    urlsForUser(req.cookies["user_id"]["id"], urlDatabase)
+    const templateVars = {user_id: req.cookies["user_id"], urls: urlsForUser(req.cookies["user_id"]["id"], urlDatabase)};
+    res.render("urls_index", templateVars);
+  } else {
+    const templateVars = {user_id: req.cookies["user_id"]}
+    res.render("urls_index", templateVars);
+  }
 });
 
 // Stores a random shortURL + submitted longURL associatedd and redirects to shortURL specific page
