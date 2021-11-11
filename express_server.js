@@ -116,9 +116,12 @@ app.get("/urls", (req, res) => {
 
 // Stores a random shortURL + submitted longURL associatedd and redirects to shortURL specific page
 app.post("/urls", (req, res) => {
-  const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
-  res.redirect(`/urls/${shortURL}`);
+  if (req.cookies["user_id"]) {
+    const shortURL = generateRandomString();
+    urlDatabase[shortURL] = req.body.longURL;
+    res.redirect(`/urls/${shortURL}`);
+  }
+  res.send("You are not logged in");
 });
 
 // New Login right now is a simple login page
@@ -148,8 +151,11 @@ app.post("/logout", (req, res) =>{
 
 // Sends ejs page urls_new to the client browser.
 app.get("/urls/new", (req, res) => {
-  const templateVars = {user_id: req.cookies["user_id"]};
-  res.render("urls_new", templateVars);
+  if (req.cookies["user_id"]) {
+    const templateVars = {user_id: req.cookies["user_id"]};
+    res.render("urls_new", templateVars);
+  } 
+  res.redirect('/urls')
 });
 
 // Sends client to longURL of it's associated shortURL using params.
@@ -165,7 +171,7 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 // Modifies urlDatabase with new longURL stored in body
-app.post('/urls/:shortURL', (req, res) =>{
+app.post('/urls/:shortURL', (req, res) => {
   urlDatabase[req.params.shortURL] = req.body.longURL;
   res.redirect('/urls');
 });
