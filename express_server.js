@@ -41,6 +41,10 @@ app.use(bodyParser.urlencoded({extended: true}));
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 
+// middleware to log requests between server and browser
+const morgan = require('morgan');
+app.use(morgan("dev"));
+
 // function to generate 6 digit random alphanumerical ShortURL
 const generateRandomString = () => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
