@@ -12,18 +12,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-const users = { 
+// Stores first two users, will store more later as registered
+const users = {
   "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
+    id: "userRandomID",
+    email: "user@example.com",
     password: "purple-monkey-dinosaur"
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
     password: "dishwasher-funk"
   }
-}
+};
 
 // used to read post request in a parameter called body
 const bodyParser = require("body-parser");
@@ -46,16 +47,29 @@ const generateRandomString = () => {
   return randomString;
 };
 
-// errorcatcher is used to check if registration is valid (helper later)
-const errorCatcher = (userList, email, password) => {
+// registerCatcher is used to check if registration is valid (helper later)
+const registerCatcher = (userList, email, password) => {
   for (const user in userList) {
     if (email === userList[user]["email"]) {
-      return {error: "Email Taken", data: null}
+      return {error: "Email Taken"};
     } if (password === "" || email === "") {
-      return {error: "Email or Password empty", data: null}
+      return {error: "Email or Password empty"};
     }
   }
-  return {error: null, data: "All Good"}
+  return {error: null};
+};
+
+// loginCatcher is used to check if the login information sent by client is correct
+const loginCatcher = (userList, email, password) => {
+  for (const user in userList) {
+    if (email === userList[user]["email"]) {
+      if (password === userList[user]["password"]) {
+        return {error: null, data: userList[user]["id"]};
+      }
+      return {error: "Password is incorrect", data: null};
+    }
+  }
+  return {error: "Email not registered in datatabase", data: null};
 };
 
 // First get just says hello in browser
@@ -82,7 +96,7 @@ app.get("/register", (req, res) => {
 // Registers email and password to users. Error if email in use or emal/pssword blank
 app.post("/register", (req, res) =>{
   const {email, password} = req.body;
-  const {error, data} = errorCatcher(users, email, password);
+  const {error} = registerCatcher(users, email, password);
   if (error) {
     console.log(error);
     res.sendStatus(400);
@@ -90,7 +104,7 @@ app.post("/register", (req, res) =>{
   }
   const id = generateRandomString();
   users[id] = {id: id, email: email, password: password};
-  res.cookie("user_id", users[id])
+  res.cookie("user_id", users[id]);
   res.redirect('/urls');
 });
 
@@ -107,15 +121,27 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
-// New Login right now is a simple login page at the moment (logic next)
+// New Login right now is a simple login page
 app.get("/login", (req, res) => {
   const templateVars = {user_id: req.cookies["user_id"]};
   res.render("urls_login", templateVars);
 });
 
-// Logout deletes cookie and forgets the username
+// Login logic implemented, allows client to input login information to remember user + create cookie
+app.post("/login", (req, res) => {
+  const {email, password} = req.body;
+  const {error, data} = loginCatcher(users, email, password);
+  if (error) {
+    console.log(error);
+    res.sendStatus(403);
+    return;
+  }
+  res.cookie("user_id", users[data]);
+  res.redirect('/urls');
+});
+
+// Logout deletes cookie and forgets the user_id
 app.post("/logout", (req, res) =>{
-  res.clearCookie("username");
   res.clearCookie("user_id");
   res.redirect('/urls');
 });
