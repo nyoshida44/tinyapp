@@ -10,12 +10,12 @@ app.set("view engine", "ejs");
 
 const urlDatabase = {
   b6UTxQ: {
-      longURL: "https://www.tsn.ca",
-      userID: "aJ48lW"
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW"
   },
   i3BoGr: {
-      longURL: "https://www.google.ca",
-      userID: "aJ48lW"
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW"
   }
 };
 
@@ -165,7 +165,7 @@ app.get("/urls/new", (req, res) => {
     const templateVars = {user_id: req.cookies["user_id"]};
     res.render("urls_new", templateVars);
     return;
-  } 
+  }
   res.redirect('/urls');
 });
 
