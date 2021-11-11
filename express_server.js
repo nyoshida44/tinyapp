@@ -171,8 +171,12 @@ app.get("/urls/new", (req, res) => {
 
 // Sends client to longURL of it's associated shortURL using params.
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL]["longURL"];
-  res.redirect(longURL);
+  if (urlDatabase[req.params.shortURL]) {
+    const longURL = urlDatabase[req.params.shortURL]["longURL"];
+    res.redirect(longURL);
+    return;
+  }
+  res.send("error: id does not exist");
 });
 
 // Sends ejs page urls_show to client browser which shows the shortURL and associated longURL
