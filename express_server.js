@@ -38,13 +38,15 @@ const users = {
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
-// used to read cookies created by the browser client
-const cookieParser = require('cookie-parser');
-app.use(cookieParser());
-
 // middleware to log requests between server and browser
 const morgan = require('morgan');
 app.use(morgan("dev"));
+
+const cookieSession = require("cookie-session");
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1']
+}));
 
 // function to generate 6 digit random alphanumerical ShortURL
 const generateRandomString = () => {
@@ -84,12 +86,11 @@ const loginCatcher = (userList, email, password) => {
   return {error: "Email not registered in datatabase", data: null};
 };
 
+// function to grab LongURLs and URL id that match login id
 const urlsForUser = (loginID, database) => {
   const returnObject = {};
   for (const data in database) {
-    console.log(database[data]["userID"])
-    console.log(loginID)
-    if (database[data]["userID"] == loginID) {
+    if (database[data]["userID"] === loginID) {
       returnObject[data] = database[data]["longURL"];
     }
   }
@@ -113,7 +114,7 @@ app.get("/hello", (req, res) => {
 
 // Sent ejs file urls_register to the client, a registration page
 app.get("/register", (req, res) => {
-  const templateVars = {user_id: req.cookies["user_id"]};
+  const templateVars = {user_id: req.session.user_id};
   res.render("urls_register", templateVars);
 });
 
@@ -129,29 +130,31 @@ app.post("/register", (req, res) =>{
   }
   const id = generateRandomString();
   users[id] = {id: id, email: email, password: hashedPassword};
-  res.cookie("user_id", users[id]);
+  req.session.user_id = users[id];
+
   res.redirect('/urls');
 });
 
 // Allows data from our database to be used in ejs page, urls_index.ejs
 app.get("/urls", (req, res) => {
-  if (req.cookies["user_id"]) {
-    urlsForUser(req.cookies["user_id"]["id"], urlDatabase);
-    const templateVars = {user_id: req.cookies["user_id"], urls: urlsForUser(req.cookies["user_id"]["id"], urlDatabase)};
+  if (req.session.user_id) {
+    urlsForUser(req.session.user_id["id"], urlDatabase);
+    const templateVars = {user_id: req.session.user_id, urls: urlsForUser(req.session.user_id["id"], urlDatabase)};
     res.render("urls_index", templateVars);
   } else {
-    const templateVars = {user_id: req.cookies["user_id"]};
+    const templateVars = {user_id: req.session.user_id};
     res.render("urls_index", templateVars);
   }
 });
 
 // Stores a random shortURL + submitted longURL associatedd and redirects to shortURL specific page
 app.post("/urls", (req, res) => {
-  if (req.cookies["user_id"]) {
+  if (req.session.user_id) {
     const shortURL = generateRandomString();
     urlDatabase[shortURL] = {};
-    urlDatabase[shortURL]["longURL"] = [req.body.longURL];
-    urlDatabase[shortURL]["userID"] = [req.cookies["user_id"]["id"]];
+    urlDatabase[shortURL]["longURL"] = req.body.longURL;
+    urlDatabase[shortURL]["userID"] = req.session.user_id["id"];
+    console.log(urlDatabase);
     res.redirect(`/urls/${shortURL}`);
     return;
   }
@@ -160,7 +163,7 @@ app.post("/urls", (req, res) => {
 
 // New Login right now is a simple login page
 app.get("/login", (req, res) => {
-  const templateVars = {user_id: req.cookies["user_id"]};
+  const templateVars = {user_id: req.session.user_id};
   res.render("urls_login", templateVars);
 });
 
@@ -173,20 +176,20 @@ app.post("/login", (req, res) => {
     res.sendStatus(403);
     return;
   }
-  res.cookie("user_id", users[data]);
+  req.session.user_id = users[data];
   res.redirect('/urls');
 });
 
 // Logout deletes cookie and forgets the user_id
 app.post("/logout", (req, res) =>{
-  res.clearCookie("user_id");
+  req.session.user_id = null;
   res.redirect('/urls');
 });
 
 // Sends ejs page urls_new to the client browser.
 app.get("/urls/new", (req, res) => {
-  if (req.cookies["user_id"]) {
-    const templateVars = {user_id: req.cookies["user_id"]};
+  if (req.session.user_id) {
+    const templateVars = {user_id: req.session.user_id};
     res.render("urls_new", templateVars);
     return;
   }
@@ -205,12 +208,12 @@ app.get("/u/:shortURL", (req, res) => {
 
 // Sends ejs page urls_show to client browser which shows the shortURL and associated longURL
 app.get("/urls/:shortURL", (req, res) => {
-  const ownedURL = urlsForUser(req.cookies["user_id"]["id"], urlDatabase);
-  if (req.cookies["user_id"]) {
+  const ownedURL = urlsForUser(req.session.user_id["id"], urlDatabase);
+  if (req.session.user_id) {
     if (ownedURL) {
       for (const url in ownedURL) {
         if (url === req.params.shortURL) {
-          const templateVars = { user_id: req.cookies["user_id"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]["longURL"] };
+          const templateVars = { user_id: req.session.user_id, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]["longURL"] };
           res.render("urls_show", templateVars);
           return;
         }
@@ -224,7 +227,7 @@ app.get("/urls/:shortURL", (req, res) => {
 
 // Modifies urlDatabase with new longURL stored in body
 app.post('/urls/:shortURL', (req, res) => {
-  if (req.cookies["user_id"]) {
+  if (req.session.user_id) {
     urlDatabase[req.params.shortURL]["longURL"] = req.body.longURL;
     res.redirect('/urls');
     return;
@@ -234,7 +237,7 @@ app.post('/urls/:shortURL', (req, res) => {
 
 // Deletes a shortURL and associate longURL and redirects to /urls
 app.post('/urls/:shortURL/delete', (req, res) =>{
-  if (req.cookies["user_id"]) {
+  if (req.session.user_id) {
     const shortURL = req.params.shortURL;
     delete urlDatabase[shortURL];
     res.redirect('/urls');
