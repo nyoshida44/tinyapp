@@ -1,5 +1,6 @@
 // require modules we will need.
 const express = require("express");
+const bcrypt = require('bcryptjs');
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -74,7 +75,7 @@ const registerCatcher = (userList, email, password) => {
 const loginCatcher = (userList, email, password) => {
   for (const user in userList) {
     if (email === userList[user]["email"]) {
-      if (password === userList[user]["password"]) {
+      if (bcrypt.compareSync(password, userList[user]["password"])) {
         return {error: null, data: userList[user]["id"]};
       }
       return {error: "Password is incorrect", data: null};
@@ -86,6 +87,8 @@ const loginCatcher = (userList, email, password) => {
 const urlsForUser = (loginID, database) => {
   const returnObject = {};
   for (const data in database) {
+    console.log(database[data]["userID"])
+    console.log(loginID)
     if (database[data]["userID"] == loginID) {
       returnObject[data] = database[data]["longURL"];
     }
@@ -118,13 +121,14 @@ app.get("/register", (req, res) => {
 app.post("/register", (req, res) =>{
   const {email, password} = req.body;
   const {error} = registerCatcher(users, email, password);
+  const hashedPassword = bcrypt.hashSync(password, 10);
   if (error) {
     console.log(error);
     res.sendStatus(400);
     return;
   }
   const id = generateRandomString();
-  users[id] = {id: id, email: email, password: password};
+  users[id] = {id: id, email: email, password: hashedPassword};
   res.cookie("user_id", users[id]);
   res.redirect('/urls');
 });
@@ -132,11 +136,11 @@ app.post("/register", (req, res) =>{
 // Allows data from our database to be used in ejs page, urls_index.ejs
 app.get("/urls", (req, res) => {
   if (req.cookies["user_id"]) {
-    urlsForUser(req.cookies["user_id"]["id"], urlDatabase)
+    urlsForUser(req.cookies["user_id"]["id"], urlDatabase);
     const templateVars = {user_id: req.cookies["user_id"], urls: urlsForUser(req.cookies["user_id"]["id"], urlDatabase)};
     res.render("urls_index", templateVars);
   } else {
-    const templateVars = {user_id: req.cookies["user_id"]}
+    const templateVars = {user_id: req.cookies["user_id"]};
     res.render("urls_index", templateVars);
   }
 });
@@ -201,7 +205,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 // Sends ejs page urls_show to client browser which shows the shortURL and associated longURL
 app.get("/urls/:shortURL", (req, res) => {
-  const ownedURL = urlsForUser(req.cookies["user_id"]["id"], urlDatabase); 
+  const ownedURL = urlsForUser(req.cookies["user_id"]["id"], urlDatabase);
   if (req.cookies["user_id"]) {
     if (ownedURL) {
       for (const url in ownedURL) {
@@ -212,7 +216,7 @@ app.get("/urls/:shortURL", (req, res) => {
         }
       }
     }
-    res.send("This URL does not belong to you.")
+    res.send("This URL does not belong to you.");
     return;
   }
   res.send("User not logged in.");
@@ -225,7 +229,7 @@ app.post('/urls/:shortURL', (req, res) => {
     res.redirect('/urls');
     return;
   }
-  res.sendStatus(400)
+  res.sendStatus(400);
 });
 
 // Deletes a shortURL and associate longURL and redirects to /urls
@@ -236,7 +240,7 @@ app.post('/urls/:shortURL/delete', (req, res) =>{
     res.redirect('/urls');
     return;
   }
-  res.sendStatus(400)
+  res.sendStatus(400);
 });
 
 // Creates a listener on a specific port, in this case 8080
