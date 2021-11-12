@@ -220,15 +220,23 @@ app.get("/urls/:shortURL", (req, res) => {
 
 // Modifies urlDatabase with new longURL stored in body
 app.post('/urls/:shortURL', (req, res) => {
-  urlDatabase[req.params.shortURL]["longURL"] = req.body.longURL;
-  res.redirect('/urls');
+  if (req.cookies["user_id"]) {
+    urlDatabase[req.params.shortURL]["longURL"] = req.body.longURL;
+    res.redirect('/urls');
+    return;
+  }
+  res.sendStatus(400)
 });
 
 // Deletes a shortURL and associate longURL and redirects to /urls
 app.post('/urls/:shortURL/delete', (req, res) =>{
-  const shortURL = req.params.shortURL;
-  delete urlDatabase[shortURL];
-  res.redirect('/urls');
+  if (req.cookies["user_id"]) {
+    const shortURL = req.params.shortURL;
+    delete urlDatabase[shortURL];
+    res.redirect('/urls');
+    return;
+  }
+  res.sendStatus(400)
 });
 
 // Creates a listener on a specific port, in this case 8080
