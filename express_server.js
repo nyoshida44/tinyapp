@@ -154,7 +154,6 @@ app.post("/urls", (req, res) => {
     urlDatabase[shortURL] = {};
     urlDatabase[shortURL]["longURL"] = req.body.longURL;
     urlDatabase[shortURL]["userID"] = req.session.user_id["id"];
-    console.log(urlDatabase);
     res.redirect(`/urls/${shortURL}`);
     return;
   }
@@ -208,8 +207,8 @@ app.get("/u/:shortURL", (req, res) => {
 
 // Sends ejs page urls_show to client browser which shows the shortURL and associated longURL
 app.get("/urls/:shortURL", (req, res) => {
-  const ownedURL = urlsForUser(req.session.user_id["id"], urlDatabase);
   if (req.session.user_id) {
+    const ownedURL = urlsForUser(req.session.user_id["id"], urlDatabase);
     if (ownedURL) {
       for (const url in ownedURL) {
         if (url === req.params.shortURL) {
