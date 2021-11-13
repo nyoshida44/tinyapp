@@ -14,7 +14,7 @@ const functionGenerator = () => {
     return randomString;
   };
 
-  // registerCatcher is used to check if registration is valid (helper later)
+  // registerCatcher is used to check if registration is valid
   const registerCatcher = (userList, email, password) => {
     for (const user in userList) {
       if (email === userList[user]["email"]) {
@@ -36,7 +36,7 @@ const functionGenerator = () => {
         return {error: "Password is incorrect", data: null};
       }
     }
-    return {error: "Email not registered in datatabase", data: null};
+    return {error: "Email not registered in database", data: null};
   };
 
   // function to grab LongURLs and URL id that match login id
