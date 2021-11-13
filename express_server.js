@@ -2,12 +2,12 @@
 const express = require("express");
 const bcrypt = require('bcryptjs');
 const functionGenerator = require("./helper");
-const { 
+const {
   generateRandomString,
   registerCatcher,
   loginCatcher,
-  urlsForUser 
-} = functionGenerator()
+  urlsForUser
+} = functionGenerator();
 
 const app = express();
 const PORT = 8080; // default port 8080
