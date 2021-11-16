@@ -58,7 +58,7 @@ app.use(cookieSession({
 
 // First get just says hello in browser
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.redirect('/urls');
 });
 
 // Sends urlDatabse to client in JSON format
@@ -73,6 +73,10 @@ app.get("/hello", (req, res) => {
 
 // Sent ejs file urls_register to the client, a registration page
 app.get("/register", (req, res) => {
+  if (req.session.user_id) {
+    res.redirect('/urls');
+    return;
+  }
   const templateVars = {user_id: req.session.user_id};
   res.render("urls_register", templateVars);
 });
@@ -121,6 +125,10 @@ app.post("/urls", (req, res) => {
 
 // New Login right now is a simple login page
 app.get("/login", (req, res) => {
+  if (req.session.user_id) {
+    res.redirect('/urls');
+    return;
+  }
   const templateVars = {user_id: req.session.user_id};
   res.render("urls_login", templateVars);
 });
@@ -140,7 +148,7 @@ app.post("/login", (req, res) => {
 
 // Logout deletes cookie and forgets the user_id
 app.post("/logout", (req, res) =>{
-  req.session.user_id = null;
+  delete req.session.user_id;
   res.redirect('/urls');
 });
 
@@ -151,7 +159,7 @@ app.get("/urls/new", (req, res) => {
     res.render("urls_new", templateVars);
     return;
   }
-  res.redirect('/urls');
+  res.redirect('/login');
 });
 
 // Sends client to longURL of it's associated shortURL using params.
@@ -177,10 +185,10 @@ app.get("/urls/:shortURL", (req, res) => {
         }
       }
     }
-    res.send("This URL does not belong to you.");
+    res.sendStatus(403)
     return;
   }
-  res.send("User not logged in.");
+  res.sendStatus(400)
 });
 
 // Modifies urlDatabase with new longURL stored in body
@@ -190,7 +198,7 @@ app.post('/urls/:shortURL', (req, res) => {
     res.redirect('/urls');
     return;
   }
-  res.sendStatus(400);
+  res.sendStatus(403);
 });
 
 // Deletes a shortURL and associate longURL and redirects to /urls
@@ -201,7 +209,7 @@ app.post('/urls/:shortURL/delete', (req, res) =>{
     res.redirect('/urls');
     return;
   }
-  res.sendStatus(400);
+  res.sendStatus(403);
 });
 
 // Creates a listener on a specific port, in this case 8080
